@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import gc
 import os
+import re
 import sys
 import time
 
@@ -64,8 +65,8 @@ class BaseTask(object):
 
 
 class Runner(object):
-    def __init__(self, task_factory):
-        self._task_factory = task_factory
+    def __init__(self, task_class):
+        self._task_class = task_class
         self._tasks = []
 
     def run(self, arg1, *args):
@@ -81,16 +82,23 @@ class Runner(object):
     def main(self):
         parser = argparse.ArgumentParser(description='Run tests')
         parser.add_argument('-l', '--list', action='store_true', help='list tests')
-        parser.add_argument('prefixes', metavar='TEST_PREFIX', nargs='*', type=str)
+        parser.add_argument(
+            'pattern',
+            metavar='REGEXP',
+            nargs='?',
+            default='.*',
+            type=str,
+            help='regexp to select tests'
+        )
         args = parser.parse_args()
 
         if args.list:
-            for n, _ in self._select_tasks(args.prefixes):
+            for n, _ in self._select_tasks(args.pattern):
                 print n
             sys.exit(0)
 
-        for n, f in self._select_tasks(args.prefixes):
-            self._run_task(lambda: self._task_factory(n, f()))
+        for n, f in self._select_tasks(args.pattern):
+            self._run_task(n, f)
         sys.exit(0)
 
     def _append(self, name, f, args):
@@ -101,31 +109,28 @@ class Runner(object):
                 return f(*args)
         self._tasks.append((name, ff)) 
 
-    def _select_tasks(self, prefixes):
-        if len(prefixes) == 0:
-            prefixes = ['']
+    def _select_tasks(self, pattern):
         for n, f in self._tasks:
-            for p in prefixes:
-                if n.startswith(p):
-                    yield n, f
-                    break
+            if re.search(pattern, n):
+                yield n, f
 
-    def _run_task(self, task_factory):
+    def _run_task(self, name, f):
         """Run task, check answer and report result."""
 
-        task = task_factory()
+        task = self._task_class(name, f())
 
         print task.name,
         sys.stdout.flush()
+
         task.write_task()
 
         task = None
         gc.collect()
 
         # start testing program
-        _, elapsed = self._task_factory.elapsed_time(self._task_factory.compute_answer)
+        _, elapsed = self._task_class.elapsed_time(self._task_class.compute_answer)
 
-        task = task_factory()
+        task = self._task_class(name, f())
 
         print task.performance(elapsed),
         sys.stdout.flush()
@@ -139,7 +144,7 @@ class Runner(object):
 
 
 @contextlib.contextmanager
-def runner(task_factory):
-    runner = Runner(task_factory)
+def runner(task_class):
+    runner = Runner(task_class)
     yield runner.run
     runner.main()
