@@ -35,7 +35,11 @@ class BaseTask(object):
         """Return human readable performance data."""
         size = self.size()
         complexity = self.complexity()
-        return 'T({}) / {:.3f} = {:.3g}'.format(size, duration, complexity / duration)
+        return 'T({}) / {:.3f} = {:.3g}'.format(
+            size,
+            duration,
+            complexity / duration
+        )
 
     def write_task(self):
         """Write task for computation."""
@@ -81,7 +85,11 @@ class Runner(object):
 
     def main(self):
         parser = argparse.ArgumentParser(description='Run tests')
-        parser.add_argument('-l', '--list', action='store_true', help='list tests')
+        parser.add_argument(
+            '-l',
+            '--list',
+            action='store_true', help='list tests'
+        )
         parser.add_argument(
             'pattern',
             metavar='REGEXP',
@@ -105,9 +113,10 @@ class Runner(object):
         ff = f
         if len(args) > 0:
             name = '_'.join([name] + map(str, args))
+
             def ff():
                 return f(*args)
-        self._tasks.append((name, ff)) 
+        self._tasks.append((name, ff))
 
     def _select_tasks(self, pattern):
         for n, f in self._tasks:
@@ -128,7 +137,9 @@ class Runner(object):
         gc.collect()
 
         # start testing program
-        _, elapsed = self._task_class.elapsed_time(self._task_class.compute_answer)
+        _, elapsed = self._task_class.elapsed_time(
+            self._task_class.compute_answer
+        )
 
         task = self._task_class(name, f())
 
