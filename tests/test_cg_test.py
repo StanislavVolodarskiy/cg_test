@@ -181,7 +181,6 @@ class TestRunner(object):
 
 class TestRunner_function(object):
     def test_runner(self, capsys):
-
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=xrange(0, 100, 2))
 
@@ -209,4 +208,31 @@ class TestRunner_function(object):
         captured = capsys.readouterr()
         assert captured.out == \
             'task_name T(15) / 2.000 = 30 \n' + \
+            'task_func_value1_value2_value3 T(15) / 2.000 = 30 \n'
+
+    def test_runner_filtered(self, capsys):
+        open_ = mock.mock_open(read_data='answer_data')
+        time_time = mock.Mock(side_effect=xrange(0, 100, 2))
+
+        with mock.patch('__builtin__.open', open_):
+            with mock.patch('os.system', mock.Mock()) as os_system:
+                with mock.patch('time.time', time_time):
+                    os_system.return_value = 0
+                    with pytest.raises(SystemExit):
+                        with cg_test.runner(Task, ['func']) as run:
+                            run('task_name', None)
+
+                            def task_func(arg1, arg2, arg3):
+                                return []
+
+                            run(task_func, 'value1', 'value2', 'value3')
+
+            assert open_.call_args_list == [
+                mock.call('tmp/in', 'w'),
+                mock.call('tmp/out', 'r')
+            ]
+            open_().write.call_args_list == []
+
+        captured = capsys.readouterr()
+        assert captured.out == \
             'task_func_value1_value2_value3 T(15) / 2.000 = 30 \n'
