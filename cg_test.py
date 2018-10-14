@@ -46,10 +46,11 @@ class BaseTask(object):
         with open('tmp/in', 'w') as f:
             self.write_task_to_file(f)
 
-    @staticmethod
-    def compute_answer():
+    @classmethod
+    def compute_answer(cls):
         """Compute answer for task."""
-        os.system('./run')
+        if os.system('./run') != 0:
+            cls.fail('computation failure')
 
     def read_answer(self):
         """Read computed answer."""
@@ -83,7 +84,7 @@ class Runner(object):
             f = arg1
             self._append(f.__name__, f, args)
 
-    def main(self):
+    def main(self, args_=None):
         parser = argparse.ArgumentParser(description='Run tests')
         parser.add_argument(
             '-l',
@@ -98,7 +99,7 @@ class Runner(object):
             type=str,
             help='regexp to select tests'
         )
-        args = parser.parse_args()
+        args = parser.parse_args(args_)
 
         if args.list:
             for n, _ in self._select_tasks(args.pattern):
@@ -155,7 +156,7 @@ class Runner(object):
 
 
 @contextlib.contextmanager
-def runner(task_class):
+def runner(task_class, args=None):
     runner = Runner(task_class)
     yield runner.run
-    runner.main()
+    runner.main(args)
