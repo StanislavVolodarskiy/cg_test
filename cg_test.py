@@ -84,6 +84,9 @@ class Runner(object):
             name = arg1
             task_data = args[0]
             self._append(name, lambda: task_data, ())
+        elif isinstance(arg1, (tuple, list)):
+            name, f = arg1
+            self._append(name, f, args)
         else:
             f = arg1
             self._append(f.__name__, f, args)
