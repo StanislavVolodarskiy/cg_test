@@ -31,6 +31,10 @@ class BaseTask(object):
         """Check answer for correctness."""
         raise NotImplementedError
 
+    def check_input(self):
+        """Check task data for validity."""
+        return True
+
     def performance(self, duration):
         """Return human readable performance data."""
         size = self.size()
@@ -132,24 +136,27 @@ class Runner(object):
         print task.name,
         sys.stdout.flush()
 
-        task.write_task()
+        if not task.check_input():
+            print 'skip invalid task'
+        else:
+            task.write_task()
 
-        task = None
-        gc.collect()
+            task = None
+            gc.collect()
 
-        # start testing program
-        _, elapsed = self._task_class.elapsed_time(
-            self._task_class.compute_answer
-        )
+            # start testing program
+            _, elapsed = self._task_class.elapsed_time(
+                self._task_class.compute_answer
+            )
 
-        task = self._task_class(name, f())
+            task = self._task_class(name, f())
 
-        print task.performance(elapsed),
-        sys.stdout.flush()
+            print task.performance(elapsed),
+            sys.stdout.flush()
 
-        answer = task.read_answer()
+            answer = task.read_answer()
 
-        task.check_answer(answer)
+            task.check_answer(answer)
 
         task = None
         gc.collect()
