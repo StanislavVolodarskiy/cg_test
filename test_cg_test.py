@@ -4,9 +4,9 @@ import pytest
 import cg_test
 
 
-class Task(cg_test.BaseTask):
+class Task1(cg_test.BaseTask):
     def __init__(self, name, task):
-        super(Task, self).__init__(name)
+        super(Task1, self).__init__(name)
 
     def size(self):
         return 15
@@ -23,6 +23,16 @@ class Task(cg_test.BaseTask):
     def check_answer(self, answer):
         assert answer == 'answer_data'
         print ''
+
+
+class Task2(Task1):
+    def __init__(self, name, task):
+        super(Task2, self).__init__(name, task)
+        assert isinstance(task, bool)
+        self._task = task
+
+    def check_input(self):
+        return self._task
 
 
 class TestBaseTask(object):
@@ -56,11 +66,11 @@ class TestBaseTask(object):
             t.check_answer(None)
 
     def test_performance(self):
-        t = Task('task_name', None)
+        t = Task1('task_name', None)
         assert t.performance(7.5) == 'T(15) / 7.500 = 8'
 
     def test_write_task(self):
-        t = Task('task_name', None)
+        t = Task1('task_name', None)
         with mock.patch('__builtin__.open', mock.mock_open()) as open_:
             t.write_task()
             open_.assert_called_with('tmp/in', 'w')
@@ -80,7 +90,7 @@ class TestBaseTask(object):
             os_system.assert_called_with('./run')
 
     def test_read_answer(self):
-        t = Task('task_name', None)
+        t = Task1('task_name', None)
         m = mock.mock_open(read_data='answer_data')
         with mock.patch('__builtin__.open', m) as open_:
             assert t.read_answer() == 'answer_data'
@@ -116,7 +126,14 @@ class TestRunner(object):
 
         r.run(task_func, 'value1', 'value2', 'value3')
 
-        task1, task2 = r._tasks
+        r.run(
+            ('task_func_name', lambda *a: ('data', 'of', 'task') + a),
+            'value1',
+            'value2',
+            'value3'
+        )
+
+        task1, task2, task3 = r._tasks
 
         name, f = task1
         assert name == 'task_name'
@@ -125,6 +142,10 @@ class TestRunner(object):
         name, f = task2
         assert name == 'task_func_value1_value2_value3'
         assert f() == ['data', 'of', 'task', 'value1', 'value2', 'value3']
+
+        name, f = task3
+        assert name == 'task_func_name_value1_value2_value3'
+        assert f() == ('data', 'of', 'task', 'value1', 'value2', 'value3')
 
     def test_main_help(self, capsys):
         r = cg_test.Runner(None)
@@ -147,7 +168,7 @@ class TestRunner(object):
         assert captured.out == 'task_name\ntask_func_value1_value2_value3\n'
 
     def test_main_run(self, capsys):
-        r = cg_test.Runner(Task)
+        r = cg_test.Runner(Task1)
         r.run('task_name', None)
 
         def task_func(arg1, arg2, arg3):
@@ -189,11 +210,12 @@ class TestRunner_function(object):
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
                     with pytest.raises(SystemExit):
-                        with cg_test.runner(Task, []) as run:
-                            run('task_name', None)
+                        with cg_test.runner(Task2, []) as run:
+                            run('task_name_1', True)
+                            run('task_name_2', False)
 
                             def task_func(arg1, arg2, arg3):
-                                return []
+                                return True
 
                             run(task_func, 'value1', 'value2', 'value3')
 
@@ -207,7 +229,8 @@ class TestRunner_function(object):
 
         captured = capsys.readouterr()
         assert captured.out == \
-            'task_name T(15) / 2.000 = 30 \n' + \
+            'task_name_1 T(15) / 2.000 = 30 \n' + \
+            'task_name_2 skip invalid task\n' + \
             'task_func_value1_value2_value3 T(15) / 2.000 = 30 \n'
 
     def test_runner_filtered(self, capsys):
@@ -219,11 +242,12 @@ class TestRunner_function(object):
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
                     with pytest.raises(SystemExit):
-                        with cg_test.runner(Task, ['func']) as run:
-                            run('task_name', None)
+                        with cg_test.runner(Task2, ['func']) as run:
+                            run('task_name_1', True)
+                            run('task_name_2', False)
 
                             def task_func(arg1, arg2, arg3):
-                                return []
+                                return True
 
                             run(task_func, 'value1', 'value2', 'value3')
 
