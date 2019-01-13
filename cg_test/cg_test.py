@@ -72,6 +72,16 @@ class BaseTask(object):
     def fail(what):
         raise Exception(what)
 
+    @classmethod
+    def fail_if(cls, f, what):
+        if f:
+            cls.fail(what)
+
+    @classmethod
+    def fail_if_neq(cls, a, b, what):
+        if a != b:
+            cls.fail('{}: {} != {}'.format(what, a, b))
+
 
 class Runner(object):
     def __init__(self, task_class):

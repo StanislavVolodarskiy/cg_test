@@ -109,6 +109,18 @@ class TestBaseTask(object):
             cg_test.BaseTask.fail('failure')
         assert e.value.args == ('failure', )
 
+    def test_fail_if(self):
+        cg_test.BaseTask.fail_if(False, 'failure')
+        with pytest.raises(Exception) as e:
+            cg_test.BaseTask.fail_if(True, 'failure')
+        assert e.value.args == ('failure', )
+
+    def test_fail_if_neq(self):
+        cg_test.BaseTask.fail_if_neq(3, 3, 'failure')
+        with pytest.raises(Exception) as e:
+            cg_test.BaseTask.fail_if_neq(3, 4, 'failure')
+        assert e.value.args == ('failure: 3 != 4', )
+
 
 class TestRunner(object):
     def test_init(self):
