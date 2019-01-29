@@ -1,13 +1,9 @@
 from __future__ import print_function
 import mock
 import pytest
-import six
 from six.moves import range
 
 import cg_test
-
-
-OPEN_NAME = '__builtin__.open' if six.PY2 else 'builtins.open'
 
 
 class Task1(cg_test.BaseTask):
@@ -77,7 +73,7 @@ class TestBaseTask(object):
 
     def test_write_task(self):
         t = Task1('task_name', None)
-        with mock.patch(OPEN_NAME, mock.mock_open()) as open_:
+        with mock.patch('six.moves.builtins.open', mock.mock_open()) as open_:
             t.write_task()
             open_.assert_called_with('tmp/in', 'w')
             open_().write.assert_called_once_with('task_data')
@@ -98,7 +94,7 @@ class TestBaseTask(object):
     def test_read_answer(self):
         t = Task1('task_name', None)
         m = mock.mock_open(read_data='answer_data')
-        with mock.patch(OPEN_NAME, m) as open_:
+        with mock.patch('six.moves.builtins.open', m) as open_:
             assert t.read_answer() == 'answer_data'
             open_.assert_called_with('tmp/out', 'r')
             open_().read.assert_called_once_with()
@@ -197,7 +193,7 @@ class TestRunner(object):
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=range(0, 100, 2))
 
-        with mock.patch(OPEN_NAME, open_):
+        with mock.patch('six.moves.builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
@@ -223,7 +219,7 @@ class TestRunner_function(object):
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=range(0, 100, 2))
 
-        with mock.patch(OPEN_NAME, open_):
+        with mock.patch('six.moves.builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
@@ -255,7 +251,7 @@ class TestRunner_function(object):
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=range(0, 100, 2))
 
-        with mock.patch(OPEN_NAME, open_):
+        with mock.patch('six.moves.builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
