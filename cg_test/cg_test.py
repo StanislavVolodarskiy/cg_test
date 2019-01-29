@@ -1,8 +1,10 @@
+from __future__ import print_function
 import argparse
 import contextlib
 import gc
 import os
 import re
+import six
 import sys
 import time
 
@@ -89,7 +91,7 @@ class Runner(object):
         self._tasks = []
 
     def run(self, arg1, *args):
-        if isinstance(arg1, basestring):
+        if isinstance(arg1, six.string_types):
             assert len(args) == 1
             name = arg1
             task_data = args[0]
@@ -120,7 +122,7 @@ class Runner(object):
 
         if args.list:
             for n, _ in self._select_tasks(args.pattern):
-                print n
+                print(n)
             sys.exit(0)
 
         for n, f in self._select_tasks(args.pattern):
@@ -130,7 +132,7 @@ class Runner(object):
     def _append(self, name, f, args):
         ff = f
         if len(args) > 0:
-            name = '_'.join([name] + map(str, args))
+            name = '_'.join([name] + list(map(str, args)))
 
             def ff():
                 return f(*args)
@@ -146,11 +148,11 @@ class Runner(object):
 
         task = self._task_class(name, f())
 
-        print task.name,
+        print(task.name, end=' ')
         sys.stdout.flush()
 
         if not task.check_input():
-            print 'skip invalid task'
+            print('skip invalid task')
         else:
             task.write_task()
 
@@ -164,7 +166,7 @@ class Runner(object):
 
             task = self._task_class(name, f())
 
-            print task.performance(elapsed),
+            print(task.performance(elapsed), end=' ')
             sys.stdout.flush()
 
             answer = task.read_answer()
