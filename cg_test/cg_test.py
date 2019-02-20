@@ -10,8 +10,9 @@ import time
 
 
 class BaseTask(object):
-    def __init__(self, name):
+    def __init__(self, name, n_in_files=1):
         self.name = name
+        self._n_in_files = n_in_files
 
     def size(self):
         """Return human readable task size."""
@@ -49,8 +50,24 @@ class BaseTask(object):
 
     def write_task(self):
         """Write task for computation."""
-        with open('tmp/in', 'w') as f:
-            self.write_task_to_file(f)
+
+        if self._n_in_files == 1:
+            filenames = ['tmp/in']
+        else:
+            filenames = [
+                'tmp/in{}'.format(i + 1) for i in range(self._n_in_files)
+            ]
+        files = [None] * len(filenames)
+
+        def open_files(i):
+            if i < len(files):
+                with open(filenames[i], 'w') as f:
+                    files[i] = f
+                    open_files(i + 1)
+            else:
+                self.write_task_to_file(*files)
+
+        open_files(0)
 
     @classmethod
     def compute_answer(cls):

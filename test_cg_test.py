@@ -7,8 +7,8 @@ import cg_test
 
 
 class Task1(cg_test.BaseTask):
-    def __init__(self, name, task):
-        super(Task1, self).__init__(name)
+    def __init__(self, name, task, n_in_files=1):
+        super(Task1, self).__init__(name, n_in_files=n_in_files)
 
     def size(self):
         return 15
@@ -16,8 +16,14 @@ class Task1(cg_test.BaseTask):
     def complexity(self):
         return 60
 
-    def write_task_to_file(self, f):
-        f.write('task_data')
+    def write_task_to_file(self, *files):
+        if len(files) == 1:
+            data = ['task_data']
+        else:
+            data = ['task_data_{}'.format(i + 1) for i in range(len(files))]
+
+        for f, d in zip(files, data):
+            f.write(d)
 
     def read_answer_from_file(self, f):
         return f.read()
@@ -75,28 +81,43 @@ class TestBaseTask(object):
         t = Task1('task_name', None)
         with mock.patch('six.moves.builtins.open', mock.mock_open()) as open_:
             t.write_task()
-            open_.assert_called_with('tmp/in', 'w')
+            open_.assert_called_once_with('tmp/in', 'w')
             open_().write.assert_called_once_with('task_data')
+
+    def test_write_task_2(self):
+        t = Task1('task_name', None, n_in_files=2)
+        with mock.patch('six.moves.builtins.open', mock.mock_open()) as open_:
+            t.write_task()
+
+            assert open_.call_args_list == [
+                mock.call('tmp/in1', 'w'),
+                mock.call('tmp/in2', 'w')
+            ]
+
+            assert open_().write.call_args_list == [
+                mock.call('task_data_1'),
+                mock.call('task_data_2')
+            ]
 
     def test_compute_answer(self):
         with mock.patch('os.system', mock.Mock()) as os_system:
             os_system.return_value = 0
             cg_test.BaseTask.compute_answer()
-            os_system.assert_called_with('./run')
+            os_system.assert_called_once_with('./run')
 
         with mock.patch('os.system', mock.Mock()) as os_system:
             os_system.return_value = 1
             with pytest.raises(Exception) as e:
                 cg_test.BaseTask.compute_answer()
             assert e.value.args == ('computation failure', )
-            os_system.assert_called_with('./run')
+            os_system.assert_called_once_with('./run')
 
     def test_read_answer(self):
         t = Task1('task_name', None)
         m = mock.mock_open(read_data='answer_data')
         with mock.patch('six.moves.builtins.open', m) as open_:
             assert t.read_answer() == 'answer_data'
-            open_.assert_called_with('tmp/out', 'r')
+            open_.assert_called_once_with('tmp/out', 'r')
             open_().read.assert_called_once_with()
 
     def test_elapsed_time(self):
