@@ -1,15 +1,18 @@
+from __future__ import print_function
 import argparse
 import contextlib
 import gc
 import os
 import re
+import six
 import sys
 import time
 
 
 class BaseTask(object):
-    def __init__(self, name):
+    def __init__(self, name, n_in_files=1):
         self.name = name
+        self._n_in_files = n_in_files
 
     def size(self):
         """Return human readable task size."""
@@ -47,8 +50,24 @@ class BaseTask(object):
 
     def write_task(self):
         """Write task for computation."""
-        with open('tmp/in', 'w') as f:
-            self.write_task_to_file(f)
+
+        if self._n_in_files == 1:
+            filenames = ['tmp/in']
+        else:
+            filenames = [
+                'tmp/in{}'.format(i + 1) for i in range(self._n_in_files)
+            ]
+        files = [None] * len(filenames)
+
+        def open_files(i):
+            if i < len(files):
+                with open(filenames[i], 'w') as f:
+                    files[i] = f
+                    open_files(i + 1)
+            else:
+                self.write_task_to_file(*files)
+
+        open_files(0)
 
     @classmethod
     def compute_answer(cls):
@@ -72,6 +91,16 @@ class BaseTask(object):
     def fail(what):
         raise Exception(what)
 
+    @classmethod
+    def fail_if(cls, f, what):
+        if f:
+            cls.fail(what)
+
+    @classmethod
+    def fail_if_neq(cls, a, b, what):
+        if a != b:
+            cls.fail('{}: {} != {}'.format(what, a, b))
+
 
 class Runner(object):
     def __init__(self, task_class):
@@ -79,7 +108,7 @@ class Runner(object):
         self._tasks = []
 
     def run(self, arg1, *args):
-        if isinstance(arg1, basestring):
+        if isinstance(arg1, six.string_types):
             assert len(args) == 1
             name = arg1
             task_data = args[0]
@@ -110,7 +139,7 @@ class Runner(object):
 
         if args.list:
             for n, _ in self._select_tasks(args.pattern):
-                print n
+                print(n)
             sys.exit(0)
 
         for n, f in self._select_tasks(args.pattern):
@@ -120,7 +149,7 @@ class Runner(object):
     def _append(self, name, f, args):
         ff = f
         if len(args) > 0:
-            name = '_'.join([name] + map(str, args))
+            name = '_'.join([name] + list(map(str, args)))
 
             def ff():
                 return f(*args)
@@ -136,11 +165,11 @@ class Runner(object):
 
         task = self._task_class(name, f())
 
-        print task.name,
+        print(task.name, end=' ')
         sys.stdout.flush()
 
         if not task.check_input():
-            print 'skip invalid task'
+            print('skip invalid task')
         else:
             task.write_task()
 
@@ -154,7 +183,7 @@ class Runner(object):
 
             task = self._task_class(name, f())
 
-            print task.performance(elapsed),
+            print(task.performance(elapsed), end=' ')
             sys.stdout.flush()
 
             answer = task.read_answer()

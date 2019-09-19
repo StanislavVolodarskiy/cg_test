@@ -13,5 +13,7 @@ setup:
 
 .PHONY: test
 test:
-	flake8
-	pytest -v -s --cov=cg_test --cov-report=term-missing .
+	bash -ci "ac; flake8"
+	bash -ci "ac; pytest -v -s --cov=cg_test --cov-report=term-missing ."
+	bash -ci "ac 3; flake8"
+	bash -ci "ac 3; pytest -v -s --cov=cg_test --cov-report=term-missing ."
