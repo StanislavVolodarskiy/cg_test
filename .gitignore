@@ -1,2 +1,4 @@
 .coverage
 cg_test.egg-info
+__pycache__
+*.pyc
