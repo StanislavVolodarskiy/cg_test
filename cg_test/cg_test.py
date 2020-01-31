@@ -9,9 +9,12 @@ import sys
 import time
 
 
+class TaskException(Exception):
+    pass
+
+
 class BaseTask(object):
-    def __init__(self, name, n_in_files=1):
-        self.name = name
+    def __init__(self, n_in_files=1):
         self._n_in_files = n_in_files
 
     def size(self):
@@ -89,7 +92,7 @@ class BaseTask(object):
 
     @staticmethod
     def fail(what):
-        raise Exception(what)
+        raise TaskException(what)
 
     @classmethod
     def fail_if(cls, f, what):
@@ -143,8 +146,21 @@ class Runner(object):
             sys.exit(0)
 
         for n, f in self._select_tasks(args.pattern):
-            self._run_task(n, f)
+            self._run_and_report_task(n, f)
         sys.exit(0)
+
+    def run_task(self, task):
+        """Run task, check answer."""
+
+        task = self._task_class(task)
+
+        assert task.check_input()
+
+        task.write_task()
+
+        self._task_class.compute_answer()
+
+        task.check_answer(task.read_answer())
 
     def _append(self, name, f, args):
         ff = f
@@ -160,13 +176,13 @@ class Runner(object):
             if re.search(pattern, n):
                 yield n, f
 
-    def _run_task(self, name, f):
+    def _run_and_report_task(self, name, f):
         """Run task, check answer and report result."""
 
-        task = self._task_class(name, f())
-
-        print(task.name, end=' ')
+        print(name, end=' ')
         sys.stdout.flush()
+
+        task = self._task_class(f())
 
         if not task.check_input():
             print('skip invalid task')
@@ -181,21 +197,32 @@ class Runner(object):
                 self._task_class.compute_answer
             )
 
-            task = self._task_class(name, f())
+            task = self._task_class(f())
 
             print(task.performance(elapsed), end=' ')
             sys.stdout.flush()
 
-            answer = task.read_answer()
+            task.check_answer(task.read_answer())
 
-            task.check_answer(answer)
+            print()
 
         task = None
         gc.collect()
 
 
+class Run(object):
+    def __init__(self, runner):
+        self._runner = runner
+
+    def __call__(self, arg1, *args):
+        self._runner.run(arg1, *args)
+
+    def immediate(self, task_data):
+        return self._runner.run_task(task_data)
+
+
 @contextlib.contextmanager
 def runner(task_class, args=None):
     runner = Runner(task_class)
-    yield runner.run
+    yield Run(runner)
     runner.main(args)
