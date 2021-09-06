@@ -13,13 +13,18 @@ setup:
 
 .PHONY: test2
 test2:
-	bash -ci "ac; flake8"
-	bash -ci "ac; pytest -v -s --cov=cg_test --cov-report=term-missing ."
+	bash -ci "pyenv-on; flake8"
+	bash -ci "pyenv-on; PYTHONPATH=. pytest --pdb -v -s --cov=cg_test --cov-report=term-missing ."
 
-.PHONY: test3
-test3:
-	bash -ci "ac 3; flake8"
-	bash -ci "ac 3; pytest -v -s --cov=cg_test --cov-report=term-missing ."
+.PHONY: test37
+test37:
+	bash -ci "pyenv-on 37; flake8"
+	bash -ci "pyenv-on 37; PYTHONPATH=. pytest --pdb -v -s --cov=cg_test --cov-report=term-missing ."
+
+.PHONY: test39
+test39:
+	bash -ci "pyenv-on 39; flake8"
+	bash -ci "pyenv-on 39; PYTHONPATH=. pytest --pdb -v -s --cov=cg_test --cov-report=term-missing ."
 
 .PHONY: test
-test: test2 test3
+test: test2 test37 test39
