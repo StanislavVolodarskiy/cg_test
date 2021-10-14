@@ -1,10 +1,8 @@
-from __future__ import print_function
 import argparse
 import contextlib
 import gc
 import os
 import re
-import six
 import sys
 import time
 
@@ -111,7 +109,7 @@ class Runner(object):
         self._tasks = []
 
     def run(self, arg1, *args):
-        if isinstance(arg1, six.string_types):
+        if isinstance(arg1, str):
             assert len(args) == 1
             name = arg1
             task_data = args[0]

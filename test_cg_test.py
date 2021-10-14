@@ -1,7 +1,5 @@
-from __future__ import print_function
 import mock
 import pytest
-from six.moves import range
 
 import cg_test
 
@@ -77,14 +75,14 @@ class TestBaseTask(object):
 
     def test_write_task(self):
         t = Task1(None)
-        with mock.patch('six.moves.builtins.open', mock.mock_open()) as open_:
+        with mock.patch('builtins.open', mock.mock_open()) as open_:
             t.write_task()
             open_.assert_called_once_with('tmp/in', 'w')
             open_().write.assert_called_once_with('task_data')
 
     def test_write_task_2(self):
         t = Task1(None, n_in_files=2)
-        with mock.patch('six.moves.builtins.open', mock.mock_open()) as open_:
+        with mock.patch('builtins.open', mock.mock_open()) as open_:
             t.write_task()
 
             assert open_.call_args_list == [
@@ -113,7 +111,7 @@ class TestBaseTask(object):
     def test_read_answer(self):
         t = Task1(None)
         m = mock.mock_open(read_data='answer_data')
-        with mock.patch('six.moves.builtins.open', m) as open_:
+        with mock.patch('builtins.open', m) as open_:
             assert t.read_answer() == 'answer_data'
             open_.assert_called_once_with('tmp/out', 'r')
             open_().read.assert_called_once_with()
@@ -212,7 +210,7 @@ class TestRunner(object):
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=range(0, 100, 2))
 
-        with mock.patch('six.moves.builtins.open', open_):
+        with mock.patch('builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
@@ -238,7 +236,7 @@ class TestRunner_function(object):
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=range(0, 100, 2))
 
-        with mock.patch('six.moves.builtins.open', open_):
+        with mock.patch('builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
@@ -270,7 +268,7 @@ class TestRunner_function(object):
         open_ = mock.mock_open(read_data='answer_data')
         time_time = mock.Mock(side_effect=range(0, 100, 2))
 
-        with mock.patch('six.moves.builtins.open', open_):
+        with mock.patch('builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 with mock.patch('time.time', time_time):
                     os_system.return_value = 0
@@ -297,7 +295,7 @@ class TestRunner_function(object):
     def test_runner_immediate(self, capsys):
         open_ = mock.mock_open(read_data='answer_data')
 
-        with mock.patch('six.moves.builtins.open', open_):
+        with mock.patch('builtins.open', open_):
             with mock.patch('os.system', mock.Mock()) as os_system:
                 os_system.return_value = 0
                 with pytest.raises(SystemExit):
