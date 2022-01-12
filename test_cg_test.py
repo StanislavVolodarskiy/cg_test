@@ -95,19 +95,6 @@ class TestBaseTask(object):
                 mock.call('task_data_2')
             ]
 
-    def test_compute_answer(self):
-        with mock.patch('os.system', mock.Mock()) as os_system:
-            os_system.return_value = 0
-            cg_test.BaseTask.compute_answer()
-            os_system.assert_called_once_with('./run')
-
-        with mock.patch('os.system', mock.Mock()) as os_system:
-            os_system.return_value = 1
-            with pytest.raises(Exception) as e:
-                cg_test.BaseTask.compute_answer()
-            assert e.value.args == ('computation failure', )
-            os_system.assert_called_once_with('./run')
-
     def test_read_answer(self):
         t = Task1(None)
         m = mock.mock_open(read_data='answer_data')
@@ -308,7 +295,18 @@ class TestRunner_function(object):
                 mock.call('tmp/in', 'w'),
                 mock.call('tmp/out', 'r')
             ]
-            open_().write.call_args_list == []
+
+            with mock.patch('os.system', mock.Mock()) as os_system:
+                os_system.return_value = 1
+                with pytest.raises(cg_test.TaskException):
+                    with cg_test.runner(Task2, []) as run:
+                        run.immediate(True)
+
+            assert open_.call_args_list == [
+                mock.call('tmp/in', 'w'),
+                mock.call('tmp/out', 'r'),
+                mock.call('tmp/in', 'w')
+            ]
 
         captured = capsys.readouterr()
         assert captured.out == ''

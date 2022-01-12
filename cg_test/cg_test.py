@@ -11,7 +11,7 @@ class TaskException(Exception):
     pass
 
 
-class BaseTask(object):
+class BaseTask:
     def __init__(self, n_in_files=1):
         self._n_in_files = n_in_files
 
@@ -71,10 +71,46 @@ class BaseTask(object):
         open_files(0)
 
     @classmethod
-    def compute_answer(cls):
-        """Compute answer for task."""
-        if os.system('./run') != 0:
-            cls.fail('computation failure')
+    def run_and_report_task(cls, f):
+        """Run task, check answer and report result."""
+
+        task = cls(f())
+
+        if not task.check_input():
+            print('skip invalid task')
+        else:
+            task.write_task()
+
+            task = None
+            gc.collect()
+
+            # start testing program
+            _, elapsed = cls.elapsed_time(cls._compute_answer)
+
+            task = cls(f())
+
+            print(task.performance(elapsed), end=' ', flush=True)
+
+            task.check_answer(task.read_answer())
+
+            print()
+
+        task = None
+        gc.collect()
+
+    @classmethod
+    def run_task(cls, task):
+        """Run task, check answer."""
+
+        task = cls(task)
+
+        assert task.check_input()
+
+        task.write_task()
+
+        cls._compute_answer()
+
+        task.check_answer(task.read_answer())
 
     def read_answer(self):
         """Read computed answer."""
@@ -101,6 +137,12 @@ class BaseTask(object):
     def fail_if_neq(cls, a, b, what):
         if a != b:
             cls.fail('{}: {} != {}'.format(what, a, b))
+
+    @classmethod
+    def _compute_answer(cls):
+        """Compute answer for task."""
+        if os.system('./run') != 0:
+            cls.fail('computation failure')
 
 
 class Runner(object):
@@ -150,15 +192,7 @@ class Runner(object):
     def run_task(self, task):
         """Run task, check answer."""
 
-        task = self._task_class(task)
-
-        assert task.check_input()
-
-        task.write_task()
-
-        self._task_class.compute_answer()
-
-        task.check_answer(task.read_answer())
+        self._task_class.run_task(task)
 
     def _append(self, name, f, args):
         ff = f
@@ -177,35 +211,8 @@ class Runner(object):
     def _run_and_report_task(self, name, f):
         """Run task, check answer and report result."""
 
-        print(name, end=' ')
-        sys.stdout.flush()
-
-        task = self._task_class(f())
-
-        if not task.check_input():
-            print('skip invalid task')
-        else:
-            task.write_task()
-
-            task = None
-            gc.collect()
-
-            # start testing program
-            _, elapsed = self._task_class.elapsed_time(
-                self._task_class.compute_answer
-            )
-
-            task = self._task_class(f())
-
-            print(task.performance(elapsed), end=' ')
-            sys.stdout.flush()
-
-            task.check_answer(task.read_answer())
-
-            print()
-
-        task = None
-        gc.collect()
+        print(name, end=' ', flush=True)
+        self._task_class.run_and_report_task(f)
 
 
 class Run(object):
