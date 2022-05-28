@@ -171,6 +171,11 @@ class Runner(object):
             action='store_true', help='list tests'
         )
         parser.add_argument(
+            '-v',
+            '--invert-match',
+            action='store_false', help='select non-matching tests'
+        )
+        parser.add_argument(
             'pattern',
             metavar='REGEXP',
             nargs='?',
@@ -181,11 +186,11 @@ class Runner(object):
         args = parser.parse_args(args_)
 
         if args.list:
-            for n, _ in self._select_tasks(args.pattern):
+            for n, _ in self._select_tasks(args.invert_match, args.pattern):
                 print(n)
             sys.exit(0)
 
-        for n, f in self._select_tasks(args.pattern):
+        for n, f in self._select_tasks(args.invert_match, args.pattern):
             self._run_and_report_task(n, f)
         sys.exit(0)
 
@@ -203,9 +208,9 @@ class Runner(object):
                 return f(*args)
         self._tasks.append((name, ff))
 
-    def _select_tasks(self, pattern):
+    def _select_tasks(self, invert_match, pattern):
         for n, f in self._tasks:
-            if re.search(pattern, n):
+            if (re.search(pattern, n) is not None) == invert_match:
                 yield n, f
 
     def _run_and_report_task(self, name, f):
