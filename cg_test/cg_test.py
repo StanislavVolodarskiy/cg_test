@@ -200,12 +200,13 @@ class Runner(object):
         self._task_class.run_task(task)
 
     def _append(self, name, f, args):
-        ff = f
         if len(args) > 0:
             name = '_'.join([name] + list(map(str, args)))
 
             def ff():
                 return f(*args)
+        else:
+            ff = f
         self._tasks.append((name, ff))
 
     def _select_tasks(self, invert_match, pattern):

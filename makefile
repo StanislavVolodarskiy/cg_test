@@ -13,8 +13,7 @@ setup:
 
 .PHONY: test3
 test3:
-	bash -ci "pyenv-on 3; flake8"
-	bash -ci "pyenv-on 3; PYTHONPATH=. pytest --pdb -v -s --cov=cg_test --cov-report=term-missing ."
+	bash -ci "pyenv-on 3; flake8 && PYTHONPATH=. pytest --pdb -v -s --cov=cg_test --cov-report=term-missing ."
 
 .PHONY: test
 test: test3
